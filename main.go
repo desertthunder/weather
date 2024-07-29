@@ -9,7 +9,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/table"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type City struct {
@@ -106,26 +109,6 @@ func Cities() map[string]City {
 	}
 }
 
-type ForecastAPIResponse struct {
-	URL      string `json:"id"`
-	Type     string `json:"type"`
-	Geometry struct {
-		Type        string    `json:"type"`
-		Coordinates []float32 `json:"coordinates"`
-	} `json:"geometry"`
-	Properties struct {
-		Forecast         string `json:"forecast"`
-		ForecastHourly   string `json:"forecastHourly"`
-		ForecastGridData string `json:"forecastGridData"`
-		ForecastZone     string `json:"forecastZone"`
-		Timezone         string `json:"timeZone"`
-		County           string `json:"county"`
-		FireWeatherZone  string `json:"fireWeatherZone"`
-		Stations         string `json:"observationStations"`
-		RadarStation     string `json:"radarStation"`
-	} `json:"properties"`
-}
-
 func selectCity() City {
 	var options []huh.Option[City]
 	var selected City
@@ -160,7 +143,7 @@ func getForecastURL(c City) string {
 
 		return ""
 	} else {
-		forecast := ForecastAPIResponse{}
+		office := ForecastOfficeAPIResponse{}
 
 		data, err := io.ReadAll(r.Body)
 
@@ -169,15 +152,20 @@ func getForecastURL(c City) string {
 			return ""
 		}
 
-		json.Unmarshal(data, &forecast)
+		json.Unmarshal(data, &office)
 
-		filename := fmt.Sprintf("%s-office.json", strings.ToLower(c.Name))
+		// Check if the output directory exists
+		if _, err := os.Stat("out"); os.IsNotExist(err) {
+			os.Mkdir("out", 0755)
+		}
+
+		filename := fmt.Sprintf("out/%s-office.json", strings.ToLower(c.Name))
 		f, err := os.Create(filename)
 
 		if err != nil {
 			fmt.Printf("Failed to create file %s: %s\n", filename, err.Error())
 
-			return forecast.Properties.Forecast
+			return office.Properties.Forecast
 		} else {
 			defer f.Close()
 
@@ -188,12 +176,142 @@ func getForecastURL(c City) string {
 				fmt.Printf("Failed to write to file %s: %s\n", filename, err.Error())
 			}
 
-			return forecast.Properties.Forecast
+			return office.Properties.Forecast
 		}
 	}
 }
 
-// func fetchForecast(uri string) {}
+// fetchForecast fetches the forecast data for the locale
+// retrieved from the office endpoint and displays it in
+// a table
+func fetchForecast(uri string) model {
+	r, err := http.Get(uri)
+
+	if err != nil {
+		fmt.Printf("Request to %s failed with error: %s\n", uri, err.Error())
+
+		return model{}
+	}
+
+	defer r.Body.Close()
+
+	forecast := ForecastAPIResponse{}
+
+	data, err := io.ReadAll(r.Body)
+
+	if err != nil {
+		fmt.Printf("Failed to read response body: %s\n", err.Error())
+
+		return model{}
+	}
+
+	json.Unmarshal(data, &forecast)
+
+	columns := []table.Column{
+		{Title: "ID", Width: 3},
+		{Title: "Label", Width: 15},
+		{Title: "T", Width: 5},
+		{Title: "P", Width: 5},
+		{Title: "Wind", Width: 15},
+		{Title: "Forecast", Width: 25},
+	}
+
+	forecasts := forecast.Properties.Periods
+	rows := []table.Row{}
+
+	for _, period := range forecasts {
+		rows = append(rows, []string{
+			fmt.Sprintf("%d", period.Number),
+			period.Label,
+			period.Temp(),
+			period.Precipitation(),
+			period.Wind(),
+			period.ShortForecast,
+		})
+	}
+
+	t := table.New(
+		table.WithColumns(columns),
+		table.WithRows(rows),
+		table.WithFocused(true),
+		table.WithHeight(7),
+	)
+
+	s := table.DefaultStyles()
+	s.Header = s.Header.
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(lipgloss.Color("240")).
+		BorderBottom(true).
+		Bold(false)
+	s.Selected = s.Selected.
+		Foreground(lipgloss.Color("229")).
+		Background(lipgloss.Color("57")).
+		Bold(false)
+	t.SetStyles(s)
+
+	return model{table: t, forecasts: forecasts}
+}
+
+var baseStyle = lipgloss.NewStyle().
+	BorderStyle(lipgloss.NormalBorder()).
+	BorderForeground(lipgloss.Color("240"))
+
+type model struct {
+	table     table.Model
+	forecasts []PeriodAPIResponse
+}
+
+func (m model) Init() tea.Cmd { return nil }
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	cleared := false
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "esc":
+			if m.table.Focused() {
+				m.table.Blur()
+			} else {
+				m.table.Focus()
+			}
+		case "q", "ctrl+c":
+			return m, tea.Quit
+		case "enter":
+			selected := m.table.SelectedRow()
+			selected_id := selected[0]
+
+			for _, period := range m.forecasts {
+				fmt_num := fmt.Sprintf("%d", period.Number)
+				time_period := strings.ToLower(period.Label)
+
+				info := tea.Printf("You selected: %s's weather forecast (id: %s).", time_period, fmt_num)
+				selected_forecast := tea.Printf("%s\n", period.DetailedForecast)
+
+				if fmt_num == selected_id {
+					if cleared {
+						return m, tea.Sequence(info, selected_forecast)
+					} else {
+						return m, tea.Sequence(tea.ClearScreen, info, selected_forecast)
+					}
+				}
+			}
+
+			return m, tea.Batch(
+				tea.Printf("The temperature is %s °F (%s)", selected[1], selected[2]),
+			)
+		}
+	}
+
+	m.table, cmd = m.table.Update(msg)
+
+	return m, cmd
+}
+
+func (m model) View() string {
+	return baseStyle.Render(m.table.View()) + "\n"
+}
 
 func main() {
 	selected := selectCity()
@@ -206,4 +324,11 @@ func main() {
 	forecast := getForecastURL(selected)
 
 	fmt.Println(forecast)
+
+	m := fetchForecast(forecast)
+
+	if _, err := tea.NewProgram(m).Run(); err != nil {
+		fmt.Println("Error running program:", err)
+		os.Exit(1)
+	}
 }
