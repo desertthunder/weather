@@ -3,6 +3,10 @@
 A weather application made on top of the weather.gov and Nominatim/OpenStreetMap
 APIs, written in Go (v1.22.4)
 
+---
+
+![Demo Webm](assets/demo.gif)
+
 ## Data Sources
 
 1. Geocoding
