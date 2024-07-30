@@ -1,4 +1,4 @@
-.PHONY: run clean
+.PHONY: run clean test
 
 clean:
 	rm -rf ./.bin
@@ -9,3 +9,11 @@ run:
 
 record:
 	@vhs demo.tape
+
+test:
+	@mkdir -p .cov
+	@go test -v ./... -coverprofile=.cov/coverage.out
+
+coverage:
+	@go tool cover -html=.cov/coverage.out -o .cov/coverage.html
+	@go tool cover -func=.cov/coverage.out | tee .cov/coverage.txt

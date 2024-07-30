@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.jade.min.css">
+</head>
+
+<body>
+    <main class="container" style="padding: 1rem;">
+        <h2>Coverage Report</h2>
+
+        <section class="grid">
+
+            {% for k in coverage %}
+            <article data-theme="dark">
+                <header data-theme="light">
+                    {{ k }}
+                </header>
+
+                <table class="striped">
+                    <tbody>
+                        {% for line in coverage[k] %}
+                        <tr>
+                            <td>{{ line[0] }}</td>
+                            <td>{{ line[1] }}</td>
+                            <td>{{ line[2] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </article>
+            {% endfor %}
+
+        </section>
+        <p><em>Generated at: {{ timestamp }}</em></p>
+    </main>
+</body>
+
+</html>

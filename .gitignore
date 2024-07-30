@@ -30,3 +30,4 @@ go.work.sum
 out/
 
 .DS_Store
+.cov
