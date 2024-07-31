@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/desertthunder/weather/internal/nws"
+	"github.com/urfave/cli/v2"
 )
 
 type City = nws.City
@@ -198,7 +200,7 @@ func (m model) View() string {
 	return baseStyle.Render(m.table.View()) + "\n"
 }
 
-func main() {
+func Root() {
 	selected := selectCity()
 
 	fmt.Println(
@@ -215,5 +217,22 @@ func main() {
 	if _, err := tea.NewProgram(m).Run(); err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)
+	}
+}
+
+// func main is the entrypoint for the CLI.
+func main() {
+	app := &cli.App{
+		Name:  "geocast",
+		Usage: "Hello world example.",
+		Action: func(*cli.Context) error {
+			fmt.Println("Hello world!")
+
+			return nil
+		},
+	}
+
+	if err := app.Run(os.Args); err != nil {
+		log.Fatal(err)
 	}
 }
