@@ -4,7 +4,9 @@ package utils
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -43,4 +45,25 @@ func SaveToFile(f string, d []byte) error {
 	_, err = io.Copy(file, bytes.NewReader(d))
 
 	return err
+}
+
+func PrintJSON(data interface{}) {
+	s, _ := json.MarshalIndent(data, "", "\t")
+	fmt.Println(string(s))
+}
+
+func ValidateIPAddress(ipaddr string) bool {
+	parts := strings.Split(ipaddr, ".")
+
+	if len(parts) != 4 {
+		return false
+	}
+
+	for _, p := range parts {
+		if len(p) < 1 || len(p) > 3 {
+			return false
+		}
+	}
+
+	return true
 }

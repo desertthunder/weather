@@ -12,26 +12,35 @@ APIs, written in Go (v1.22.4)
 The demo video is generated using `vhs`. See [demo.tape](assets/demo.tape) for
 the exact commands seen in the video.
 
+## Usage
+
+| Command   | Arguments | Flags    | Description                                            |
+| --------- | --------- | -------- | ------------------------------------------------------ |
+| `geocast` | none      | `-ip`    | geocode the IP address to get the city and state. If no IP is provided, the current IP is used. |
+| `geocast` | `city`    | `-state` | geocode a city to get its latitude and longitude       |
+| `geocast` | `code`    | none     | reverse geocode a latitude and longitude to get a city |
+
 ## Data Sources
 
 1. Geocoding
-    - ipinfo
-    - Nominatim/OpenStreetMap (osm)
+
+   - ipinfo
+   - Nominatim/OpenStreetMap (osm)
 
 2. Weather
-    - weather.gov (US)
+   - weather.gov (US)
 
 ### Sample US Data
 
-| City            | State | Latitude  | Longitude |
-|-----------------|-------|-----------|-----------|
-| Seattle         | WA    | 47.6062   | -122.3321 |
-| Austin          | TX    | 30.2672   | -97.7431  |
-| Cleveland       | OH    | 41.4993   | -81.6944  |
-| Hartford        | CT    | 41.7658   | -72.6734  |
-| Boston          | MA    | 42.3601   | -71.0589  |
-| Los Angeles     | CA    | 34.0522   | -118.2437 |
-| Pittsburgh      | PA    | 40.4406   | -79.9959  |
+| City        | State | Latitude | Longitude |
+| ----------- | ----- | -------- | --------- |
+| Seattle     | WA    | 47.6062  | -122.3321 |
+| Austin      | TX    | 30.2672  | -97.7431  |
+| Cleveland   | OH    | 41.4993  | -81.6944  |
+| Hartford    | CT    | 41.7658  | -72.6734  |
+| Boston      | MA    | 42.3601  | -71.0589  |
+| Los Angeles | CA    | 34.0522  | -118.2437 |
+| Pittsburgh  | PA    | 40.4406  | -79.9959  |
 
 ## Updating Test Coverage
 

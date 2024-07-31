@@ -14,7 +14,6 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/desertthunder/weather/internal/nws"
-	"github.com/urfave/cli/v2"
 )
 
 type City = nws.City
@@ -222,15 +221,7 @@ func Root() {
 
 // func main is the entrypoint for the CLI.
 func main() {
-	app := &cli.App{
-		Name:  "geocast",
-		Usage: "Hello world example.",
-		Action: func(*cli.Context) error {
-			fmt.Println("Hello world!")
-
-			return nil
-		},
-	}
+	app := application()
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
