@@ -39,8 +39,11 @@ def get_coverage(cov_file: str = ".cov/coverage.txt"):
 
     for line in lines:
         if line.startswith(module_name):
-            file_path, func_name, cov_pct = line.replace("\t\t", "\t").split("\t")
 
+            parts = line.replace("\t\t", "\t").split("\t")
+            parts = [p for p in parts if bool(p)]
+
+            file_path, func_name, cov_pct = parts
             filename, line_number, _ = file_path.split(":")
 
             if filename not in coverage:
@@ -60,7 +63,7 @@ def get_coverage(cov_file: str = ".cov/coverage.txt"):
     return coverage
 
 
-def render_html(coverage: dict):
+def render_html(cov: dict):
     """Render the coverage data to an HTML file."""
     j2_env = jinja2.Environment(
         loader=jinja2.FileSystemLoader("templates"),
@@ -69,7 +72,7 @@ def render_html(coverage: dict):
 
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     template = j2_env.get_template("coverage.j2")
-    html = template.render(coverage=coverage, timestamp=timestamp)
+    html = template.render(coverage=cov, timestamp=timestamp)
 
     with open("coverage.html", "w") as f:
         f.write(html)
