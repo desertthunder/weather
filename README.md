@@ -7,6 +7,11 @@ APIs, written in Go (v1.22.4)
 
 ![Demo Webm](assets/demo.gif)
 
+---
+
+The demo video is generated using `vhs`. See [demo.tape](assets/demo.tape) for
+the exact commands seen in the video.
+
 ## Data Sources
 
 1. Geocoding
@@ -27,3 +32,25 @@ APIs, written in Go (v1.22.4)
 | Boston          | MA    | 42.3601   | -71.0589  |
 | Los Angeles     | CA    | 34.0522   | -118.2437 |
 | Pittsburgh      | PA    | 40.4406   | -79.9959  |
+
+## Updating Test Coverage
+
+This project leverages a few tools executed by `coverage.py` to generate the below
+coverage image, namely playwright and the built-in `go tool cover` command.
+
+To ensure that you're able to generate the coverage image, you'll need to install
+the `playwright` package and install the `chromium` browser.
+
+Setup the virtual environment and install the dependencies:
+
+```bash
+virtualenv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Then, install `playwright` with firefox and chromium:
+
+```bash
+playwright install
+```

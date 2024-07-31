@@ -1,4 +1,4 @@
-.PHONY: run clean test
+.PHONY: run clean test coverage cover record
 
 clean:
 	rm -rf ./.bin
@@ -20,3 +20,4 @@ coverage:
 
 cover:
 	@go tool cover -html=.cov/coverage.out
+	@python coverage.py .cov/coverage.txt
