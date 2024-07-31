@@ -5,10 +5,10 @@ clean:
 	rm *.json
 
 run:
-	@go build -o ./.bin/ main.go doc.go && ./.bin/main
+	@go build -o ./.bin/ ./cmd/cli/./... ./internal/./... && ./.bin/cli
 
 record:
-	@vhs demo.tape
+	@vhs assets/demo.tape
 
 test:
 	@mkdir -p .cov
@@ -17,3 +17,6 @@ test:
 coverage:
 	@go tool cover -html=.cov/coverage.out -o .cov/coverage.html
 	@go tool cover -func=.cov/coverage.out | tee .cov/coverage.txt
+
+cover:
+	@go tool cover -html=.cov/coverage.out

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,107 +12,16 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/desertthunder/weather/internal/nws"
 )
 
-type City struct {
-	Name string
-	Lat  float64
-	Long float64
-}
-
-func (c City) OfficeURL() string {
-	return fmt.Sprintf("https://api.weather.gov/points/%f,%f", c.Lat, c.Long)
-}
-
-func (c City) Fmt() string {
-	return fmt.Sprintf("%s (%f, %f)", c.Name, c.Lat, c.Long)
-}
-
-func Seattle() City {
-	return City{
-		Name: "Seattle",
-		Lat:  47.6062,
-		Long: -122.3321,
-	}
-}
-
-func Austin() City {
-	return City{
-		Name: "Austin",
-		Lat:  30.2672,
-		Long: -97.7431,
-	}
-}
-
-func Cleveland() City {
-	return City{
-		Name: "Cleveland",
-		Lat:  41.4993,
-		Long: -81.6944,
-	}
-}
-
-func Boston() City {
-	return City{
-		Name: "Boston",
-		Lat:  42.3601,
-		Long: -71.0589,
-	}
-}
-
-func LosAngeles() City {
-	return City{
-		Name: "Los Angeles",
-		Lat:  34.0522,
-		Long: -118.2437,
-	}
-}
-
-func Pittsburgh() City {
-	return City{
-		Name: "Pittsburgh",
-		Lat:  40.4406,
-		Long: -79.9959,
-	}
-}
-
-func Hartford() City {
-	return City{
-		Name: "Hartford",
-		Lat:  41.7658,
-		Long: -72.6734,
-	}
-}
-
-func CityNames() []string {
-	return []string{
-		"Seattle",
-		"Austin",
-		"Cleveland",
-		"Hartford",
-		"Boston",
-		"Los Angeles",
-		"Pittsburgh",
-	}
-}
-
-func Cities() map[string]City {
-	return map[string]City{
-		"Seattle":     Seattle(),
-		"Austin":      Austin(),
-		"Cleveland":   Cleveland(),
-		"Hartford":    Hartford(),
-		"Boston":      Boston(),
-		"Los Angeles": LosAngeles(),
-		"Pittsburgh":  Pittsburgh(),
-	}
-}
+type City = nws.City
 
 func selectCity() City {
 	var options []huh.Option[City]
 	var selected City
 
-	for _, city := range Cities() {
+	for _, city := range nws.Cities() {
 		options = append(options, huh.NewOption(city.Name, city))
 	}
 
@@ -142,43 +50,20 @@ func getForecastURL(c City) string {
 		fmt.Printf("Request to %s failed with error: %s\n", uri, err.Error())
 
 		return ""
-	} else {
-		office := ForecastOfficeAPIResponse{}
-
-		data, err := io.ReadAll(r.Body)
-
-		if err != nil {
-			fmt.Printf("Failed to read response body: %s\n", err.Error())
-			return ""
-		}
-
-		json.Unmarshal(data, &office)
-
-		// Check if the output directory exists
-		if _, err := os.Stat("out"); os.IsNotExist(err) {
-			os.Mkdir("out", 0755)
-		}
-
-		filename := fmt.Sprintf("out/%s-office.json", strings.ToLower(c.Name))
-		f, err := os.Create(filename)
-
-		if err != nil {
-			fmt.Printf("Failed to create file %s: %s\n", filename, err.Error())
-
-			return office.Properties.Forecast
-		} else {
-			defer f.Close()
-
-			// Write the response body to the file
-			_, err = io.Copy(f, bytes.NewReader(data))
-
-			if err != nil {
-				fmt.Printf("Failed to write to file %s: %s\n", filename, err.Error())
-			}
-
-			return office.Properties.Forecast
-		}
 	}
+
+	office := nws.ForecastOfficeAPIResponse{}
+
+	data, err := io.ReadAll(r.Body)
+
+	if err != nil {
+		fmt.Printf("Failed to read response body: %s\n", err.Error())
+		return ""
+	}
+
+	json.Unmarshal(data, &office)
+
+	return office.Properties.Forecast
 }
 
 // fetchForecast fetches the forecast data for the locale
@@ -195,7 +80,7 @@ func fetchForecast(uri string) model {
 
 	defer r.Body.Close()
 
-	forecast := ForecastAPIResponse{}
+	forecast := nws.ForecastAPIResponse{}
 
 	data, err := io.ReadAll(r.Body)
 
@@ -258,7 +143,7 @@ var baseStyle = lipgloss.NewStyle().
 
 type model struct {
 	table     table.Model
-	forecasts []PeriodAPIResponse
+	forecasts []nws.PeriodAPIResponse
 }
 
 func (m model) Init() tea.Cmd { return nil }
