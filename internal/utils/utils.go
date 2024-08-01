@@ -48,7 +48,7 @@ func SaveToFile(f string, d []byte) error {
 }
 
 func PrintJSON(data interface{}) {
-	s, _ := json.MarshalIndent(data, "", "\t")
+	s, _ := json.MarshalIndent(data, "", "  ")
 	fmt.Println(string(s))
 }
 
@@ -66,4 +66,12 @@ func ValidateIPAddress(ipaddr string) bool {
 	}
 
 	return true
+}
+
+func PrintRawJSON(data []byte) {
+	dst := &bytes.Buffer{}
+
+	json.Indent(dst, data, "", "  ")
+
+	fmt.Println(dst.String())
 }

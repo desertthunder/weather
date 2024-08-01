@@ -1,11 +1,14 @@
-.PHONY: run clean test coverage cover record
+.PHONY: clean build run test coverage cover record
 
 clean:
 	rm -rf ./.bin
 	rm *.json
 
+build:
+	@go build -o ./.bin/ ./cmd/cli/./... ./internal/./...
+
 run:
-	@go build -o ./.bin/ ./cmd/cli/./... ./internal/./... && ./.bin/cli
+	@./.bin/cli
 
 record:
 	@vhs assets/demo.tape

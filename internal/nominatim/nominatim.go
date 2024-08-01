@@ -1,0 +1,177 @@
+// Nominatim API client for geocoding and reverse geocoding.
+//
+// Endpoints:
+//
+// Base URL: https://nominatim.openstreetmap.org
+//
+// /search - search OSM objects by name or type
+// /reverse - search OSM object by their location
+// /lookup - look up address details for OSM objects by their ID
+// /status - query the status of the server
+package nominatim
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+
+	"github.com/desertthunder/weather/internal/utils"
+)
+
+type Formats = string
+type Endpoints = string
+
+const (
+	Json    Formats = "json"
+	JsonV2  Formats = "jsonv2"
+	GeoJson Formats = "geojson"
+	GeoCode Formats = "geocodejson"
+)
+
+const (
+	Search  Endpoints = "search"
+	Reverse Endpoints = "reverse"
+	Lookup  Endpoints = "lookup"
+	Status  Endpoints = "status"
+)
+
+// Note: We need this to be overridden in tests and for future
+// work in which a local instance of Nominatim is used.
+const BaseURL = "https://nominatim.openstreetmap.org"
+
+type Nominatim struct {
+	baseURL   string
+	params    Params
+	userAgent string
+}
+
+func (n *Nominatim) SetURL(url string) {
+	n.baseURL = url
+}
+
+func (n Nominatim) GetBaseURL() string {
+	return n.baseURL
+}
+
+func (n *Nominatim) SetParams(params Params) {
+	n.params = params
+}
+
+func (n *Nominatim) SetUserAgent(ua string) {
+	n.userAgent = ua
+}
+
+type nominatimSearchResult struct {
+	PlaceID     int      `json:"place_id"`
+	Licence     string   `json:"licence"`
+	OSM_Type    string   `json:"osm_type"`
+	OSM_ID      int      `json:"osm_id"`
+	Lat         string   `json:"lat"`
+	Lon         string   `json:"lon"`
+	Category    string   `json:"category"`
+	Type        string   `json:"type"`
+	PlaceRank   int      `json:"place_rank"`
+	Importance  float64  `json:"importance"`
+	AddressType string   `json:"addresstype"`
+	Name        string   `json:"name"`
+	DisplayName string   `json:"display_name"`
+	BoundingBox []string `json:"boundingbox"`
+}
+
+type NominatimSearchResponse = []nominatimSearchResult
+
+type Params struct {
+	// free form search query string
+	Q           string
+	Format      Formats
+	Limit       int
+	NameDetails bool
+}
+
+func (p Params) String() string {
+	qs := ""
+
+	if p.Q == "" {
+		return qs
+	}
+
+	qs = fmt.Sprintf("q=%s", p.Q)
+
+	if p.Format == "" {
+		p.Format = JsonV2
+	}
+
+	qs = fmt.Sprintf("%s&format=%s", qs, p.Format)
+
+	if p.Format == JsonV2 || p.Format == Json {
+		p.Limit = 25
+	}
+
+	qs = fmt.Sprintf("%s&limit=%d", qs, p.Limit)
+
+	if p.NameDetails {
+		qs = fmt.Sprintf("%s&namedetails=1", qs)
+	}
+
+	return qs
+}
+
+func (n *Nominatim) getRequest(endpoint Endpoints) ([]byte, error) {
+	uri := n.baseURL
+
+	if endpoint == Search {
+		uri = fmt.Sprintf("%s/%s?%s", uri, endpoint, n.params.String())
+	}
+
+	client := &http.Client{}
+
+	req, _ := http.NewRequest("GET", uri, nil)
+
+	req.Header.Set("User-Agent", n.userAgent)
+
+	rsp, err := client.Do(req)
+
+	if err != nil {
+		fmt.Printf("Request to %s failed with error: %s\n", uri, err.Error())
+
+		return nil, err
+	}
+
+	data, err := io.ReadAll(rsp.Body)
+
+	if err != nil {
+		fmt.Printf("Failed to read response body: %s\n", err.Error())
+
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func handleSimpleError(err error) {
+	fmt.Printf("Error: %s\n", err)
+}
+
+func (n *Nominatim) Search() {
+	d, err := n.getRequest(Search)
+
+	if err != nil {
+		handleSimpleError(err)
+
+		return
+	}
+
+	rsp := NominatimSearchResponse{}
+	json.Unmarshal(d, &rsp)
+
+	utils.PrintJSON(rsp)
+}
+
+func Init(ua string) *Nominatim {
+	return &Nominatim{
+		baseURL:   BaseURL,
+		params:    Params{},
+		userAgent: ua,
+	}
+}
