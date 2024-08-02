@@ -55,12 +55,12 @@ func PrintJSON(data interface{}) {
 func ValidateIPAddress(ipaddr string) bool {
 	parts := strings.Split(ipaddr, ".")
 
-	if len(parts) != 4 {
-		return false
-	}
+	return len(parts) == 4 && validateIPParts(parts)
+}
 
-	for _, p := range parts {
-		if len(p) < 1 || len(p) > 3 {
+func validateIPParts(parts []string) bool {
+	for _, p := range parts[0:3] {
+		if len(p) < 1 || len(p) > 3 || p == "0" {
 			return false
 		}
 	}
@@ -69,9 +69,15 @@ func ValidateIPAddress(ipaddr string) bool {
 }
 
 func PrintRawJSON(data []byte) {
+	s := GetRawJSON(data)
+
+	fmt.Println(s)
+}
+
+func GetRawJSON(data []byte) string {
 	dst := &bytes.Buffer{}
 
 	json.Indent(dst, data, "", "  ")
 
-	fmt.Println(dst.String())
+	return dst.String()
 }

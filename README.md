@@ -27,6 +27,20 @@ the exact commands seen in the video.
 | `geocast` | `forecast`| none     | fetch the forecast                                     |
 | `geocast` | `forecast`| `-city`  | fetch the forecast for a city                          |
 
+### Examples
+
+```bash
+geocast f -c Seattle
+```
+
+```bash
+geocast f -i 192.168.1.1
+```
+
+```bash
+geocast f
+```
+
 ## Data Sources
 
 1. Geocoding

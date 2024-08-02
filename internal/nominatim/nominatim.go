@@ -12,9 +12,12 @@ package nominatim
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/desertthunder/weather/internal/nws"
 )
 
 type Formats = string
@@ -169,10 +172,50 @@ func (n *Nominatim) Search() NominatimSearchResponse {
 	return rsp
 }
 
+func (n *Nominatim) GeocodeByPoint(lat, lon float64) (*nws.City, error) {
+	n.SetParams(Params{
+		Q: fmt.Sprintf("%f,%f", lat, lon),
+	})
+
+	results := n.Search()
+
+	if len(results) == 0 {
+		return nil, errors.New("no results found for the provided point")
+	}
+
+	result := results[0]
+
+	city := nws.BuildCity(result.DisplayName, result.Lat, result.Lon)
+
+	return &city, nil
+}
+
+func (n *Nominatim) GeocodeByCity(c string) (*nws.City, error) {
+	n.SetParams(Params{
+		Q: c,
+	})
+
+	results := n.Search()
+
+	if len(results) == 0 {
+		return nil, errors.New("no results found for the provided city name")
+	}
+
+	result := results[0]
+
+	city := nws.BuildCity(result.DisplayName, result.Lat, result.Lon)
+
+	return &city, nil
+}
+
 func Init() *Nominatim {
 	return &Nominatim{
 		baseURL:   BaseURL,
 		params:    Params{},
 		userAgent: UserAgent,
 	}
+}
+
+func Client() *Nominatim {
+	return Init()
 }

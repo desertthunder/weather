@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/desertthunder/weather/internal/nws"
 	"github.com/desertthunder/weather/internal/utils"
 )
 
@@ -34,6 +35,16 @@ type IPInfoClient struct {
 	Token   string
 }
 
+func (r IPInfoResponse) BuildCity() nws.City {
+	lat, lon := r.Point()
+
+	return nws.City{
+		Name: r.City,
+		Lat:  lat,
+		Long: lon,
+	}
+}
+
 func (c *IPInfoClient) SetToken(token string) {
 	c.Token = token
 }
@@ -49,10 +60,6 @@ func (i *IPInfoResponse) Point() (float64, float64) {
 	lon, _ := strconv.ParseFloat(coords[1], 64)
 
 	return lat, lon
-}
-
-func NewIPInfoClient(token string) *IPInfoClient {
-	return &IPInfoClient{Token: token, BaseURL: baseURL}
 }
 
 func (c *IPInfoClient) Geolocate(ipaddr *string) (IPInfoResponse, error) {
@@ -73,7 +80,8 @@ func (c *IPInfoClient) Geolocate(ipaddr *string) (IPInfoResponse, error) {
 	}
 
 	valid := true
-	if *ipaddr != "" {
+
+	if ipaddr != nil {
 		valid = utils.ValidateIPAddress(*ipaddr)
 
 		uri.Path = fmt.Sprintf("/%s", *ipaddr)
@@ -85,9 +93,12 @@ func (c *IPInfoClient) Geolocate(ipaddr *string) (IPInfoResponse, error) {
 		return ipinfo, err
 	}
 
-	uri.Query().Add("token", c.Token)
+	query := uri.Query()
+	query.Add("token", c.Token)
 
-	rsp, err := http.Get(uri.String())
+	withQuery := fmt.Sprintf("%s?%s", uri.String(), query.Encode())
+
+	rsp, err := http.Get(withQuery)
 
 	if err != nil {
 		fmt.Printf("Request to %s failed with error: %s\n", uri, err.Error())
@@ -105,11 +116,23 @@ func (c *IPInfoClient) Geolocate(ipaddr *string) (IPInfoResponse, error) {
 		return ipinfo, err
 	}
 
-	err = json.Unmarshal(data, &ipinfo)
-
-	if err != nil {
-		fmt.Printf("Failed to unmarshal response body: %s\n", err.Error())
-	}
+	err = ipinfo.Validate(data)
 
 	return ipinfo, err
+}
+
+func (r *IPInfoResponse) Validate(data []byte) error {
+	s := utils.GetRawJSON(data)
+
+	if strings.Contains(s, "bogon") {
+		return errors.New("IP address is private (may be local)")
+	} else {
+		err := json.Unmarshal(data, &r)
+
+		return err
+	}
+}
+
+func NewIPInfoClient(token string) *IPInfoClient {
+	return &IPInfoClient{Token: token, BaseURL: baseURL}
 }

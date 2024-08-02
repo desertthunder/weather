@@ -10,6 +10,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
+	"github.com/desertthunder/weather/internal/ipinfo"
 	"github.com/desertthunder/weather/internal/nominatim"
 	"github.com/desertthunder/weather/internal/nws"
 	"github.com/spf13/viper"
@@ -86,28 +87,6 @@ func (c *conf) initLogger() {
 	}
 
 	c.log = logger
-}
-
-func GeocastCommand() *cli.Command {
-	return &cli.Command{
-		Name:    "geocode",
-		Aliases: []string{"code", "gc"},
-		Usage:   "Geocode a location.",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:    "city",
-				Aliases: []string{"c", "n", "cn"},
-				Usage:   "City name.",
-			},
-		},
-		Action: func(ctx *cli.Context) error {
-			city := ctx.String("city")
-
-			fmt.Printf("Fetching weather forecast for %s...\n", city)
-
-			return nil
-		},
-	}
 }
 
 // func ForecastCommand defines a pointer to the forecast command.
@@ -206,12 +185,17 @@ func ForecastCommand(config *conf) *cli.Command {
 		Category: "Forecast",
 		Action: func(ctx *cli.Context) error {
 			logger := config.log
-			logger.SetLevel(log.DebugLevel)
 			logger.Debug("Forecast command invoked.")
 
 			city := ctx.String("city")
 			ip := ctx.String("ip")
 			pt := ctx.StringSlice("pt")
+
+			var n *nominatim.Nominatim
+
+			if len(pt) > 0 || city != "" {
+				n = nominatim.Client()
+			}
 
 			// Default to point, otherwise proceed to city.
 			if len(pt) > 0 {
@@ -220,26 +204,60 @@ func ForecastCommand(config *conf) *cli.Command {
 
 				logger.Debug(fmt.Sprintf("Set params to lat: %f, lon: %f", lat, lng))
 
-				return nil
+				city, err := n.GeocodeByPoint(lat, lng)
+
+				if err != nil {
+					logger.Error(err.Error())
+				} else {
+					logger.Debug(fmt.Sprintf("Found: %s", city.Fmt()))
+				}
+
+				return err
 			}
 
 			// Geocode the city.
 			if city != "" {
 				logger.Debug(fmt.Sprintf("Set params to city: %s", city))
 
-				return nil
-			}
+				city, err := n.GeocodeByCity(city)
 
-			// Instantiate the IPInfo client.
-			// Get the city information via the IP.
-			if ip != "" {
-				logger.Debug(fmt.Sprintf("Set params to ip: %s", ip))
-			} else {
-				logger.Debug("No IP address provided, will attempt to use device IP.")
+				if err != nil {
+					logger.Error(err.Error())
+				} else {
+					logger.Debug(fmt.Sprintf("Found: %s", city.Fmt()))
+				}
+
+				return err
 			}
 
 			// If no city or IP is provided, use the current user's IP.
-			return nil
+			// Initialize the IPInfo client.
+			ipc := ipinfo.NewIPInfoClient(config.Get("IPINFO_TOKEN"))
+
+			// Instantiate the IPInfo client.
+			// Get the city information via the IP.
+			var loc ipinfo.IPInfoResponse
+			var err error
+
+			if ip != "" {
+				logger.Debug(fmt.Sprintf("Set params to ip: %s", ip))
+
+				loc, err = ipc.Geolocate(&ip)
+			} else {
+				logger.Debug("No IP address provided, will attempt to use device IP.")
+
+				loc, err = ipc.Geolocate(nil)
+			}
+
+			if err == nil {
+				city := loc.BuildCity()
+
+				logger.Debug(fmt.Sprintf("Found: %s", city.Fmt()))
+			} else {
+				logger.Error(err.Error())
+			}
+
+			return err
 		},
 	}
 }
