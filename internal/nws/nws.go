@@ -13,6 +13,7 @@ const baseURL string = "https://api.weather.gov"
 
 type WeatherClient struct {
 	baseURL string
+	Log     *log.Logger
 	logger  *log.Logger
 }
 
@@ -30,6 +31,7 @@ func NewWeatherClient() *WeatherClient {
 
 func (c *WeatherClient) SetLogger(logger *log.Logger) {
 	c.logger = logger
+	c.Log = logger
 }
 
 type WeatherResponse struct{}

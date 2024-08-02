@@ -1,3 +1,6 @@
+// Geocast is a command line utility/application that allows a user
+// to geocode themselves or a city, fetch the weather forecast for
+// the city, and display it in a table.
 package main
 
 import (

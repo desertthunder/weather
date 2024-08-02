@@ -14,6 +14,7 @@ import (
 	"github.com/desertthunder/weather/internal/ipinfo"
 	"github.com/desertthunder/weather/internal/nominatim"
 	"github.com/desertthunder/weather/internal/nws"
+	"github.com/desertthunder/weather/internal/view"
 	"github.com/spf13/viper"
 	"github.com/urfave/cli/v2"
 )
@@ -100,6 +101,124 @@ func (c *conf) initLogger() {
 	c.log = logger
 }
 
+func flags() []cli.Flag {
+	return []cli.Flag{
+		&cli.StringFlag{
+			Name:    "city",
+			Aliases: []string{"c", "n", "cn"},
+			Usage:   "The city name to fetch the forecast for.",
+		},
+		&cli.StringFlag{
+			Name:  "ip",
+			Usage: "The IP address to fetch the forecast for.",
+		},
+		&cli.StringSliceFlag{
+			Name:    "pt",
+			Aliases: []string{"p"},
+			Usage:   "The point to fetch the forecast for (lat,lon).",
+		},
+		&cli.IntFlag{
+			Name: "verbosity",
+			Aliases: []string{
+				"v",
+			},
+			Usage: "Verbosity level. 0 - Default, 1 - Temperature, 2 - Short Forecast, 3 - Detailed Forecast",
+			Value: 0,
+		},
+		&cli.BoolFlag{
+			Name: "extended",
+			Aliases: []string{
+				"e",
+			},
+			Usage: "Include forecast data beyond the next day.",
+		},
+		&cli.BoolFlag{
+			Name: "interactive",
+			Aliases: []string{
+				"i",
+			},
+			Usage: "Interactive mode (not *quite* implemented)",
+		},
+	}
+}
+
+func geocode(i *ipinfo.IPInfoClient, n *nominatim.Nominatim, ctx *cli.Context) *nws.City {
+	pt := ctx.StringSlice("pt")
+	c := ctx.String("city")
+	ip := ctx.String("ip")
+
+	var city *nws.City
+	var err error
+	var ipc ipinfo.IPInfoResponse
+
+	if len(pt) > 0 {
+		lat, _ := strconv.ParseFloat(pt[0], 64)
+		lng, _ := strconv.ParseFloat(pt[1], 64)
+
+		city, err = n.GeocodeByPoint(lat, lng)
+	} else if c != "" {
+		city, err = n.GeocodeByCity(c)
+	}
+
+	if err != nil {
+		i.Log.Error(err.Error())
+
+		return nil
+	} else if city != nil {
+		return city
+	}
+
+	if ip == "" {
+		i.Log.Debug("No IP address provided, will attempt to use device IP.")
+
+		ipc, err = i.Geolocate(nil)
+
+	} else {
+		i.Log.Debug(fmt.Sprintf("Set params to ip: %s", ip))
+
+		ipc, err = i.Geolocate(&ip)
+	}
+
+	if err != nil {
+		i.Log.Error(err.Error())
+
+		return nil
+	}
+
+	cityV := ipc.BuildCity()
+
+	return &cityV
+}
+
+// func forecast defines the shared functionality for the forecast command.
+func forecast(city *nws.City, w *nws.WeatherClient, ctx *cli.Context) {
+	forecast, err := w.GetWeather(*city)
+
+	if err != nil {
+		w.Log.Error(err.Error())
+
+		return
+	}
+
+	v := ctx.Int("verbosity")
+
+	w.Log.Debug(fmt.Sprintf("Verbosity level: %d", v))
+
+	extended := ctx.Bool("extended")
+
+	w.Log.Debug(fmt.Sprintf("Extended: %t", extended))
+
+	for _, period := range forecast.Properties.Periods {
+		view.ForecastLine(period, v)
+
+		if extended {
+			time.Sleep(time.Millisecond * 500)
+		} else {
+			break
+		}
+	}
+}
+
 // func ForecastCommand defines a pointer to the forecast command.
 //
 // Usage: geocast g[eocode] [-city]
@@ -115,9 +234,17 @@ func GeocodeCommand(config *conf) *cli.Command {
 		Category: "Core",
 		Usage:    "Geocode a city or IP address, or reverse geocode a latitude and longitude.",
 		Action: func(ctx *cli.Context) error {
-			logger := config.log
+			i := ipinfo.NewIPInfoClient(config.Get("IPINFO_TOKEN"))
+			n := nominatim.Client()
+			i.SetLogger(config.log)
 
-			logger.Warn("Not implemented.")
+			city := geocode(i, n, ctx)
+
+			if city == nil {
+				return nil
+			}
+
+			view.CityLine(city)
 
 			return nil
 		},
@@ -133,137 +260,16 @@ func ForecastCommand(config *conf) *cli.Command {
 		},
 		Usage:     "Fetch the weather forecast.",
 		UsageText: "geocast f[orecast] [--c]ity [--i]p [--p]t",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:    "city",
-				Aliases: []string{"c", "n", "cn"},
-				Usage:   "The city name to fetch the forecast for.",
-			},
-			&cli.StringFlag{
-				Name:  "ip",
-				Usage: "The IP address to fetch the forecast for.",
-			},
-			&cli.StringSliceFlag{
-				Name:    "pt",
-				Aliases: []string{"p"},
-				Usage:   "The point to fetch the forecast for (lat,lon).",
-			},
-			&cli.BoolFlag{
-				Name: "verbose",
-				Aliases: []string{
-					"v",
-					"extended",
-					"e",
-				},
-				Usage: "Include forecast data beyond the next day.",
-			},
-			&cli.BoolFlag{
-				Name: "interactive",
-				Aliases: []string{
-					"i",
-				},
-				Usage: "Interactive mode",
-			},
-		},
-		Category: "Core",
+		Args:      true,
+		Flags:     flags(),
 		Action: func(ctx *cli.Context) error {
-			logger := config.log
-			logger.Debug("Forecast command invoked.")
+			i := ipinfo.NewIPInfoClient(config.Get("IPINFO_TOKEN"))
+			n := nominatim.Client()
+			w := nws.NewWeatherClient()
+			i.SetLogger(config.log)
+			w.SetLogger(config.log)
 
-			city := ctx.String("city")
-			ip := ctx.String("ip")
-			pt := ctx.StringSlice("pt")
-
-			var n *nominatim.Nominatim
-
-			if len(pt) > 0 || city != "" {
-				n = nominatim.Client()
-			}
-
-			// Default to point, otherwise proceed to city.
-			if len(pt) > 0 {
-				lat, _ := strconv.ParseFloat(pt[0], 64)
-				lng, _ := strconv.ParseFloat(pt[1], 64)
-
-				logger.Debug(fmt.Sprintf("Set params to lat: %f, lon: %f", lat, lng))
-
-				city, err := n.GeocodeByPoint(lat, lng)
-
-				if err != nil {
-					logger.Error(err.Error())
-				} else {
-					logger.Debug(fmt.Sprintf("Found: %s", city.Fmt()))
-				}
-
-				return err
-			}
-
-			// Geocode the city.
-			if city != "" {
-				logger.Debug(fmt.Sprintf("Set params to city: %s", city))
-
-				city, err := n.GeocodeByCity(city)
-
-				if err != nil {
-					logger.Error(err.Error())
-				} else {
-					logger.Debug(fmt.Sprintf("Found: %s", city.Fmt()))
-				}
-
-				return err
-			}
-
-			// If no city or IP is provided, use the current user's IP.
-			// Initialize the IPInfo client.
-			ipc := ipinfo.NewIPInfoClient(config.Get("IPINFO_TOKEN"))
-
-			// Instantiate the IPInfo client.
-			// Get the city information via the IP.
-			var loc ipinfo.IPInfoResponse
-			var err error
-			if ip != "" {
-				logger.Debug(fmt.Sprintf("Set params to ip: %s", ip))
-
-				loc, err = ipc.Geolocate(&ip)
-
-			} else {
-				logger.Debug("No IP address provided, will attempt to use device IP.")
-
-				loc, err = ipc.Geolocate(nil)
-			}
-
-			if err != nil {
-				logger.Error(err.Error())
-				return err
-			} else {
-				city := loc.BuildCity()
-
-				wea := nws.NewWeatherClient()
-				wea.SetLogger(logger)
-				logger.Debug(fmt.Sprintf("Found: %s", city.Fmt()))
-
-				forecast, err := wea.GetWeather(city)
-
-				if err != nil {
-					logger.Error(err.Error())
-					return err
-				}
-
-				if ctx.Bool("interactive") {
-					interactive(city)
-
-					return nil
-				}
-
-				for _, period := range forecast.Properties.Periods {
-					period.View()
-					if ctx.Bool("extended") {
-						time.Sleep(time.Millisecond * 500)
-					} else {
-						break
-					}
-				}
-			}
+			DefaultAction(i, n, w, ctx)
 
 			return nil
 		},
@@ -288,18 +294,28 @@ func InteractiveCommand() *cli.Command {
 	}
 }
 
-func commands() []*cli.Command {
-	config := Config()
-	return []*cli.Command{
-		ForecastCommand(config),
-		GeocodeCommand(config),
-		InteractiveCommand(),
+// DefaultAction is the function called when no arguments are provided or when
+// the "me" argument is provided.
+//
+// The default action is to first geocode the current device's IP address and
+// then fetch the weather forecast for the city.
+func DefaultAction(i *ipinfo.IPInfoClient, n *nominatim.Nominatim, nwsc *nws.WeatherClient, ctx *cli.Context) {
+	city := geocode(i, n, ctx)
+
+	if city == nil {
+		return
 	}
+
+	forecast(city, nwsc, ctx)
 }
 
 // func application acts as a constant and is
 // the entry point for the application.
 func Application() *cli.App {
+	config := Config()
+
+	logger := config.log
+
 	return &cli.App{
 		Name:     "geocast",
 		HelpName: "geocast (Geo[coding] + [Fore]cast)",
@@ -310,10 +326,83 @@ geocast i[nteractive]`,
 		Description: `Geocast is a command line utility that provides location aware weather forecasts.
 It can be used to fetch the weather forecast for a specific city, latitude and
 longitude, or the current device's IP address.`,
-		Version:  "0.1.0",
 		Compiled: time.Now(),
-		Commands: commands(),
+		// Global flags for the application , i.e. the flags that apply to all commands.
+		//
+		// City, IP, and Point flags
+		Flags: flags(),
+		Commands: []*cli.Command{
+			ForecastCommand(config),
+			GeocodeCommand(config),
+			InteractiveCommand(),
+		},
 		Action: func(ctx *cli.Context) error {
+			arg := ctx.Args().First()
+			flags := ctx.FlagNames()
+
+			logger.Debug(fmt.Sprintf("Flags: %s", flags))
+
+			logger.Debug(fmt.Sprintf("Arg: %s", arg))
+
+			// arg can be "me" or a city name.
+
+			ipc := ipinfo.NewIPInfoClient(config.Get("IPINFO_TOKEN"))
+			n := nominatim.Client()
+			nwsc := nws.NewWeatherClient()
+
+			nwsc.SetLogger(logger)
+			ipc.SetLogger(logger)
+
+			app := ctx.Bool("interactive")
+			if strings.ToLower(arg) == "me" || ctx.Args().Len() == 0 {
+				logger.Debug("Default command invoked.")
+
+				if app {
+					city := geocode(ipc, n, ctx)
+
+					if city == nil {
+						return nil
+					} else {
+						view.CityLine(city)
+
+						interactive(*city)
+
+						return nil
+					}
+				} else {
+					DefaultAction(ipc, n, nwsc, ctx)
+				}
+
+				return nil
+			}
+			// Geocode the city.
+			city, err := n.GeocodeByCity(arg)
+
+			if err != nil {
+				logger.Error(err.Error())
+				return err
+			}
+
+			if city != nil {
+				view.CityLine(city)
+			}
+
+			weather, err := nwsc.GetWeather(*city)
+
+			if err != nil {
+				logger.Error(err.Error())
+				return err
+			}
+
+			for _, period := range weather.Properties.Periods {
+				view.ForecastLine(period, ctx.Int("verbosity"))
+
+				if ctx.Bool("extended") {
+					time.Sleep(time.Millisecond * 500)
+				} else {
+					break
+				}
+			}
 			return nil
 		},
 	}

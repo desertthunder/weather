@@ -75,6 +75,19 @@ func (p PeriodAPIResponse) Temp() string {
 	return fmt.Sprintf("%d%s", p.Temperature, unit)
 }
 
+// StartTime is of the format 2024-08-02T06:00:00-05:00
+func (p PeriodAPIResponse) IsToday() bool {
+	start, _ := time.Parse(time.RFC3339, p.StartTime)
+
+	return time.Now().Weekday().String() == start.Weekday().String()
+}
+
+func (p PeriodAPIResponse) IsTomorrow() bool {
+	start, _ := time.Parse(time.RFC3339, p.StartTime)
+
+	return time.Now().Add(time.Hour*24).Weekday().String() == start.Weekday().String()
+}
+
 func (e ElevationAPIResponse) Fmt() string {
 	unit := e.UnitCode
 	unit = strings.TrimPrefix(unit, "wmoUnit:")

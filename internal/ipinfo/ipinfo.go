@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/charmbracelet/log"
 	"github.com/desertthunder/weather/internal/nws"
 	"github.com/desertthunder/weather/internal/utils"
 )
@@ -30,11 +31,18 @@ type IPInfoResponse struct {
 	Timezone     string `json:"timezone"`
 }
 
+// Client for the https://ipinfo.io API.
 type IPInfoClient struct {
+	// Base URL for the API. Defaults to https://ipinfo.io but
+	// can be overridden for tests.
 	BaseURL string
-	Token   string
+	// Token for the API. Required for requests.
+	Token string
+	// Logger for the client.
+	Log *log.Logger
 }
 
+// BuildCity converts an IPInfoResponse to a City object.
 func (r IPInfoResponse) BuildCity() nws.City {
 	lat, lon := r.Point()
 
@@ -53,6 +61,11 @@ func (i *IPInfoClient) SetURL(url string) {
 	i.BaseURL = url
 }
 
+// Setter for the logger.
+func (i *IPInfoClient) SetLogger(logger *log.Logger) {
+	i.Log = logger
+}
+
 func (i *IPInfoResponse) Point() (float64, float64) {
 	coords := strings.Split(i.Location, ",")
 
@@ -62,6 +75,10 @@ func (i *IPInfoResponse) Point() (float64, float64) {
 	return lat, lon
 }
 
+// Call the IPInfo API to geolocate a given IP address.
+//
+// If no IP address is provided, no param is passed to the API, which means the
+// client's IP address is used.
 func (c *IPInfoClient) Geolocate(ipaddr *string) (IPInfoResponse, error) {
 	ipinfo := IPInfoResponse{}
 

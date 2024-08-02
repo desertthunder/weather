@@ -3,43 +3,37 @@
 A weather application made on top of the weather.gov and Nominatim/OpenStreetMap
 APIs, written in Go (v1.22.4)
 
----
-
 ![Demo Webm](assets/demo.gif)
 
 ---
 
-The demo video is generated using `vhs`. See [demo.tape](assets/demo.tape) for
-the exact commands seen in the video.
+![Interactive Webm](assets/interactive.gif)
+
+---
+
+The demo video is generated using `vhs`. See [demo.tape](assets/demo.tape) or [interactive.tape](assets/interactive.tape) for
+the exact commands seen above. For the extended video, see [here](assets/extended.webm).
 
 ## Usage
 
-| Command   | Arguments | Flags    | Description                                            |
-| --------- | --------- | -------- | ------------------------------------------------------ |
-| `geocast` | none      | `-ip`    | geocode the IP address to get the city and state. If no IP is provided, the current IP is used. |
-| `geocast` | `city`    | `-state` | geocode a city to get its latitude and longitude       |
-| `geocast` | `code`    | none     | reverse geocode a latitude and longitude to get a city |
+- `geocast` or `geocast me` to get the weather forecast for the current IP address.
+- `geocast [city]` to get the weather forecast for a city.
+- `geocast [lat,lon]` to get the weather forecast for a latitude and longitude.
+- `geocast --interactive` to get the weather forecast for the current IP address in an interactive mode.
 
-### Weather Commands
+---
 
-| Command   | Arguments | Flags    | Description                                            |
-| --------- | --------- | -------- | ------------------------------------------------------ |
-| `geocast` | `forecast`| none     | fetch the forecast                                     |
-| `geocast` | `forecast`| `-city`  | fetch the forecast for a city                          |
+- `geocast geocode` or `geocast g` to geocode a city.
+- `geocast geocode [city]` to geocode a city.
+- `geocast geocode [lat,lon]` to reverse geocode a latitude and longitude.
+- `geocast geocode --interactive` to geocode a city in an interactive mode.
 
-### Examples
+---
 
-```bash
-geocast f -c Seattle
-```
-
-```bash
-geocast f -i 192.168.1.1
-```
-
-```bash
-geocast f
-```
+- `geocast forecast` or `geocast f` to get the weather forecast for the current IP address.
+- `geocast forecast [city]` to get the weather forecast for a city.
+- `geocast forecast [lat,lon]` to get the weather forecast for a latitude and longitude.
+- `geocast forecast --interactive` to get the weather forecast for the current IP address in an interactive mode.
 
 ## Data Sources
 

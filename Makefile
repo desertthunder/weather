@@ -20,6 +20,8 @@ run:
 
 record:
 	@vhs assets/demo.tape
+	@vhs assets/interactive.tape
+	@vhs assets/extended.tape
 
 test:
 	@mkdir -p .cov
