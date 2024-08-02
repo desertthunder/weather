@@ -25,11 +25,16 @@ type conf struct {
 	log *log.Logger
 }
 
+// struct color is an object mapping a log level
+// to a color.
 type color struct {
 	level log.Level
 	color string
 }
 
+// Convert log level to the string representation.
+//
+// ex. log.DebugLevel -> "DEBUG"
 func (c color) String() string {
 	return strings.ToUpper(c.level.String())
 }
@@ -69,6 +74,11 @@ func (c *conf) Get(key string) string {
 	return c.v.GetString(key)
 }
 
+// initLogger initializes the logger with a set of
+// default styles and colors while also streaming
+// the logs to the console.
+//
+// TODO: Add support for file logging.
 func (c *conf) initLogger() {
 	styles := log.DefaultStyles()
 	logger := log.New(os.Stdout)
@@ -102,7 +112,8 @@ func GeocodeCommand(config *conf) *cli.Command {
 			"g",
 			"gc",
 		},
-		Usage: "Fetch the weather forecast.",
+		Category: "Core",
+		Usage:    "Geocode a city or IP address, or reverse geocode a latitude and longitude.",
 		Action: func(ctx *cli.Context) error {
 			logger := config.log
 
@@ -114,8 +125,6 @@ func GeocodeCommand(config *conf) *cli.Command {
 }
 
 // ForecastCommand defines a pointer to the forecast command.
-//
-// Usage: geocast f[orecast] [-city] [-ip] [-pt]
 func ForecastCommand(config *conf) *cli.Command {
 	return &cli.Command{
 		Name: "forecast",
@@ -156,7 +165,7 @@ func ForecastCommand(config *conf) *cli.Command {
 				Usage: "Interactive mode",
 			},
 		},
-		Category: "Forecast",
+		Category: "Core",
 		Action: func(ctx *cli.Context) error {
 			logger := config.log
 			logger.Debug("Forecast command invoked.")
@@ -261,6 +270,9 @@ func ForecastCommand(config *conf) *cli.Command {
 	}
 }
 
+// InteractiveCommand defines a pointer to the charm/bubble
+// table-based interactive mode. It starts a bubbletea application
+// that displays the weather forecast for a selected city.
 func InteractiveCommand() *cli.Command {
 	return &cli.Command{
 		Name:  "interactive",
@@ -268,6 +280,7 @@ func InteractiveCommand() *cli.Command {
 		Aliases: []string{
 			"i",
 		},
+		Category: "Core",
 		Action: func(ctx *cli.Context) error {
 			Interactive()
 			return nil
@@ -288,57 +301,19 @@ func commands() []*cli.Command {
 // the entry point for the application.
 func Application() *cli.App {
 	return &cli.App{
-		Name:  "geocast",
-		Usage: "Hello world example.",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:    "ip",
-				Usage:   "IP address to geocode",
-				Aliases: []string{"i"},
-			},
-		},
+		Name:     "geocast",
+		HelpName: "geocast (Geo[coding] + [Fore]cast)",
+		Usage:    "Location aware weather forecasts for the command line.",
+		UsageText: `geocast f[orecast] [--c]ity [--ip] [--p]t [--i]nteractive
+geocast g[eocode] [--c]ity [--ip] [--p]t
+geocast i[nteractive]`,
+		Description: `Geocast is a command line utility that provides location aware weather forecasts.
+It can be used to fetch the weather forecast for a specific city, latitude and
+longitude, or the current device's IP address.`,
+		Version:  "0.1.0",
+		Compiled: time.Now(),
 		Commands: commands(),
 		Action: func(ctx *cli.Context) error {
-			day := lipgloss.NewStyle().
-				SetString("DAY").
-				Padding(0, 1, 0, 1).
-				Background(lipgloss.Color("63")).
-				Foreground(lipgloss.Color("0"))
-
-			night := lipgloss.NewStyle().
-				SetString("NIGHT").
-				Padding(0, 1, 0, 1).
-				Background(lipgloss.Color("192")).
-				Foreground(lipgloss.Color("0"))
-
-			today := lipgloss.NewStyle().
-				SetString("TODAY").
-				Padding(0, 1, 0, 1).
-				Background(lipgloss.Color("86")).
-				Foreground(lipgloss.Color("0"))
-
-			tonight := lipgloss.NewStyle().
-				SetString("TONIGHT").
-				Padding(0, 1, 0, 1).
-				Background(lipgloss.Color("204")).
-				Foreground(lipgloss.Color("0"))
-
-			for _, d := range []string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"} {
-				fmt.Printf(
-					"%s: %s %s\n",
-					day.String(),
-					d,
-					today.Render(time.Now().Weekday().String()),
-				)
-
-				fmt.Printf(
-					"%s: %s %s\n",
-					night.Render(),
-					d,
-					tonight.Render(time.Now().Weekday().String()),
-				)
-			}
-
 			return nil
 		},
 	}
