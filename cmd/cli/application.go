@@ -198,15 +198,14 @@ func (m model) View() string {
 	return baseStyle.Render(m.table.View()) + "\n"
 }
 
-func Root() {
+func Interactive() {
 	selected := selectCity()
 
-	fmt.Println(
-		"You picked",
-		selected.Fmt(),
-	)
+	interactive(selected)
+}
 
-	forecast := getForecastURL(selected)
+func interactive(city nws.City) {
+	forecast := getForecastURL(city)
 
 	fmt.Println(forecast)
 

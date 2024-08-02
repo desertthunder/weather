@@ -7,10 +7,7 @@ import (
 	"github.com/charmbracelet/lipgloss/table"
 )
 
-func Table(
-	headers []string,
-	data [][]string,
-) *table.Table {
+func Table(headers []string, data [][]string) *table.Table {
 	re := lipgloss.NewRenderer(os.Stdout)
 	baseStyle := lipgloss.NewStyle().Padding(0, 1)
 	headerStyle := baseStyle.Foreground(lipgloss.Color("#005fd7")).Bold(true)

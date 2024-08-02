@@ -131,9 +131,8 @@ func ForecastCommand(config *conf) *cli.Command {
 				Usage:   "The city name to fetch the forecast for.",
 			},
 			&cli.StringFlag{
-				Name:    "ip",
-				Aliases: []string{"i"},
-				Usage:   "The IP address to fetch the forecast for.",
+				Name:  "ip",
+				Usage: "The IP address to fetch the forecast for.",
 			},
 			&cli.StringSliceFlag{
 				Name:    "pt",
@@ -141,11 +140,20 @@ func ForecastCommand(config *conf) *cli.Command {
 				Usage:   "The point to fetch the forecast for (lat,lon).",
 			},
 			&cli.BoolFlag{
-				Name: "extended",
+				Name: "verbose",
 				Aliases: []string{
+					"v",
+					"extended",
 					"e",
 				},
 				Usage: "Include forecast data beyond the next day.",
+			},
+			&cli.BoolFlag{
+				Name: "interactive",
+				Aliases: []string{
+					"i",
+				},
+				Usage: "Interactive mode",
 			},
 		},
 		Category: "Forecast",
@@ -219,7 +227,6 @@ func ForecastCommand(config *conf) *cli.Command {
 				logger.Error(err.Error())
 				return err
 			} else {
-
 				city := loc.BuildCity()
 
 				wea := nws.NewWeatherClient()
@@ -233,23 +240,36 @@ func ForecastCommand(config *conf) *cli.Command {
 					return err
 				}
 
-				if ctx.Bool("extended") {
+				if ctx.Bool("interactive") {
+					interactive(city)
 
-					for _, period := range forecast.Properties.Periods {
-						logger.Infof("%s: %s", period.Label, period.DetailedForecast)
+					return nil
+				}
 
+				for _, period := range forecast.Properties.Periods {
+					period.View()
+					if ctx.Bool("extended") {
 						time.Sleep(time.Millisecond * 500)
+					} else {
+						break
 					}
-				} else {
-					period := forecast.Properties.Periods[0]
-					logger.Infof(
-						"The temperature is %s °F (%s)",
-						period.Temp(),
-						period.ShortForecast,
-					)
 				}
 			}
 
+			return nil
+		},
+	}
+}
+
+func InteractiveCommand() *cli.Command {
+	return &cli.Command{
+		Name:  "interactive",
+		Usage: "Interactive mode",
+		Aliases: []string{
+			"i",
+		},
+		Action: func(ctx *cli.Context) error {
+			Interactive()
 			return nil
 		},
 	}
@@ -260,6 +280,7 @@ func commands() []*cli.Command {
 	return []*cli.Command{
 		ForecastCommand(config),
 		GeocodeCommand(config),
+		InteractiveCommand(),
 	}
 }
 
@@ -278,13 +299,45 @@ func Application() *cli.App {
 		},
 		Commands: commands(),
 		Action: func(ctx *cli.Context) error {
-			ip := ctx.String("ip")
+			day := lipgloss.NewStyle().
+				SetString("DAY").
+				Padding(0, 1, 0, 1).
+				Background(lipgloss.Color("63")).
+				Foreground(lipgloss.Color("0"))
 
-			if ip != "" {
-				fmt.Printf("Geocoding IP address: %s\n", ip)
+			night := lipgloss.NewStyle().
+				SetString("NIGHT").
+				Padding(0, 1, 0, 1).
+				Background(lipgloss.Color("192")).
+				Foreground(lipgloss.Color("0"))
+
+			today := lipgloss.NewStyle().
+				SetString("TODAY").
+				Padding(0, 1, 0, 1).
+				Background(lipgloss.Color("86")).
+				Foreground(lipgloss.Color("0"))
+
+			tonight := lipgloss.NewStyle().
+				SetString("TONIGHT").
+				Padding(0, 1, 0, 1).
+				Background(lipgloss.Color("204")).
+				Foreground(lipgloss.Color("0"))
+
+			for _, d := range []string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"} {
+				fmt.Printf(
+					"%s: %s %s\n",
+					day.String(),
+					d,
+					today.Render(time.Now().Weekday().String()),
+				)
+
+				fmt.Printf(
+					"%s: %s %s\n",
+					night.Render(),
+					d,
+					tonight.Render(time.Now().Weekday().String()),
+				)
 			}
-
-			RootAction(ip, nil)
 
 			return nil
 		},
