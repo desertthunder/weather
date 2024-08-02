@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/desertthunder/weather/cmd/actions"
+	"github.com/desertthunder/weather/cmd/cli"
 	"github.com/desertthunder/weather/internal/ipinfo"
 	"github.com/spf13/viper"
 )
@@ -65,7 +65,7 @@ func TestRootAction(t *testing.T) {
 			os.Stdout = w
 
 			// Call the function
-			actions.RootAction(tt.inputs.ip, ipc)
+			cli.RootAction(tt.inputs.ip, ipc)
 
 			// Restore stdout and close the pipe
 			w.Close()

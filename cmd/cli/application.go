@@ -1,10 +1,9 @@
-package main
+package cli
 
 import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -216,14 +215,5 @@ func Root() {
 	if _, err := tea.NewProgram(m).Run(); err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)
-	}
-}
-
-// func main is the entrypoint for the CLI.
-func main() {
-	app := application()
-
-	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err)
 	}
 }

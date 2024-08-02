@@ -20,6 +20,13 @@ the exact commands seen in the video.
 | `geocast` | `city`    | `-state` | geocode a city to get its latitude and longitude       |
 | `geocast` | `code`    | none     | reverse geocode a latitude and longitude to get a city |
 
+### Weather Commands
+
+| Command   | Arguments | Flags    | Description                                            |
+| --------- | --------- | -------- | ------------------------------------------------------ |
+| `geocast` | `forecast`| none     | fetch the forecast                                     |
+| `geocast` | `forecast`| `-city`  | fetch the forecast for a city                          |
+
 ## Data Sources
 
 1. Geocoding
@@ -44,8 +51,8 @@ the exact commands seen in the video.
 
 ## Updating Test Coverage
 
-This project leverages a few tools executed by `coverage.py` to generate the below
-coverage image, namely playwright and the built-in `go tool cover` command.
+This project leverages a few tools executed by `coverage.py` to generate the
+below coverage image, namely playwright and the built-in `go tool cover` command.
 
 To ensure that you're able to generate the coverage image, you'll need to install
 the `playwright` package and install the `chromium` browser.

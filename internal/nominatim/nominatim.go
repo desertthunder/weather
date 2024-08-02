@@ -15,8 +15,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-
-	"github.com/desertthunder/weather/internal/utils"
 )
 
 type Formats = string
@@ -38,7 +36,10 @@ const (
 
 // Note: We need this to be overridden in tests and for future
 // work in which a local instance of Nominatim is used.
-const BaseURL = "https://nominatim.openstreetmap.org"
+const BaseURL string = "https://nominatim.openstreetmap.org"
+
+// User-Agent for testing purposes.
+const UserAgent string = "geocast-desertthunder@github.com"
 
 type Nominatim struct {
 	baseURL   string
@@ -153,25 +154,25 @@ func handleSimpleError(err error) {
 	fmt.Printf("Error: %s\n", err)
 }
 
-func (n *Nominatim) Search() {
+func (n *Nominatim) Search() NominatimSearchResponse {
 	d, err := n.getRequest(Search)
 
 	if err != nil {
 		handleSimpleError(err)
 
-		return
+		return NominatimSearchResponse{}
 	}
 
 	rsp := NominatimSearchResponse{}
 	json.Unmarshal(d, &rsp)
 
-	utils.PrintJSON(rsp)
+	return rsp
 }
 
-func Init(ua string) *Nominatim {
+func Init() *Nominatim {
 	return &Nominatim{
 		baseURL:   BaseURL,
 		params:    Params{},
-		userAgent: ua,
+		userAgent: UserAgent,
 	}
 }
