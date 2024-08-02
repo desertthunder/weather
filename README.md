@@ -11,8 +11,7 @@ APIs, written in Go (v1.22.4)
 
 ---
 
-The demo video is generated using `vhs`. See [demo.tape](assets/demo.tape) or [interactive.tape](assets/interactive.tape) for
-the exact commands seen above. For the extended video, see [here](assets/extended.webm).
+The demo video is generated using `vhs`. See [demo.tape](assets/demo.tape) or [interactive.tape](assets/interactive.tape) for the exact commands seen above. For the extended video, see [here](assets/extended.mp4).
 
 ## Usage
 

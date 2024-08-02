@@ -1,4 +1,4 @@
-Output assets/extended.webm
+Output assets/extended.mp4
 
 Set FontSize 16
 Set Width 1200
@@ -8,6 +8,6 @@ Type "geocast --v 2 Austin"
 Enter
 Sleep 2000ms
 
-Type "geocast --extended Austin --v 3"
+Type "geocast --extended --v 3 Austin"
 Enter
 Sleep 10000ms
