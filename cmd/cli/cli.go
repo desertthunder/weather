@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
@@ -102,52 +103,10 @@ func GeocodeCommand(config *conf) *cli.Command {
 			"gc",
 		},
 		Usage: "Fetch the weather forecast.",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:    "city",
-				Aliases: []string{"c", "n", "cn"},
-				Usage:   "The city name to fetch the forecast for.",
-			},
-		},
 		Action: func(ctx *cli.Context) error {
 			logger := config.log
-			osm := nominatim.Init()
-			ua := config.Get("NOMINATIM_USER_AGENT")
 
-			if ua != "" {
-				osm.SetUserAgent(ua)
-			}
-
-			logger.Debug(fmt.Sprintf("Initialized client at: %s", osm.GetBaseURL()))
-
-			c := ctx.String("city")
-
-			if c == "" {
-				fmt.Println("Please provide a city name to fetch the forecast for.")
-
-				return nil
-			}
-
-			osm.SetParams(nominatim.Params{
-				Q: c,
-			})
-
-			logger.Debug(fmt.Sprintf("Set params to q: %s", c))
-
-			results := osm.Search()
-
-			if len(results) == 0 {
-
-				fmt.Println("No results found for the provided city name.")
-
-				return nil
-			}
-
-			result := results[0]
-
-			city := nws.BuildCity(result.DisplayName, result.Lat, result.Lon)
-
-			logger.Debug(fmt.Sprintf("Found: %s", city.Fmt()))
+			logger.Warn("Not implemented.")
 
 			return nil
 		},
@@ -180,6 +139,13 @@ func ForecastCommand(config *conf) *cli.Command {
 				Name:    "pt",
 				Aliases: []string{"p"},
 				Usage:   "The point to fetch the forecast for (lat,lon).",
+			},
+			&cli.BoolFlag{
+				Name: "extended",
+				Aliases: []string{
+					"e",
+				},
+				Usage: "Include forecast data beyond the next day.",
 			},
 		},
 		Category: "Forecast",
@@ -238,26 +204,53 @@ func ForecastCommand(config *conf) *cli.Command {
 			// Get the city information via the IP.
 			var loc ipinfo.IPInfoResponse
 			var err error
-
 			if ip != "" {
 				logger.Debug(fmt.Sprintf("Set params to ip: %s", ip))
 
 				loc, err = ipc.Geolocate(&ip)
+
 			} else {
 				logger.Debug("No IP address provided, will attempt to use device IP.")
 
 				loc, err = ipc.Geolocate(nil)
 			}
 
-			if err == nil {
+			if err != nil {
+				logger.Error(err.Error())
+				return err
+			} else {
+
 				city := loc.BuildCity()
 
+				wea := nws.NewWeatherClient()
+				wea.SetLogger(logger)
 				logger.Debug(fmt.Sprintf("Found: %s", city.Fmt()))
-			} else {
-				logger.Error(err.Error())
+
+				forecast, err := wea.GetWeather(city)
+
+				if err != nil {
+					logger.Error(err.Error())
+					return err
+				}
+
+				if ctx.Bool("extended") {
+
+					for _, period := range forecast.Properties.Periods {
+						logger.Infof("%s: %s", period.Label, period.DetailedForecast)
+
+						time.Sleep(time.Millisecond * 500)
+					}
+				} else {
+					period := forecast.Properties.Periods[0]
+					logger.Infof(
+						"The temperature is %s °F (%s)",
+						period.Temp(),
+						period.ShortForecast,
+					)
+				}
 			}
 
-			return err
+			return nil
 		},
 	}
 }

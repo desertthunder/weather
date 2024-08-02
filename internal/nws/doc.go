@@ -97,3 +97,7 @@ type ForecastOfficeAPIResponse struct {
 		RadarStation     string `json:"radarStation"`
 	} `json:"properties"`
 }
+
+func (f ForecastOfficeAPIResponse) ForecastURL() string {
+	return f.Properties.Forecast
+}
