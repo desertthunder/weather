@@ -58,10 +58,12 @@ for the exact commands seen above. For the extended video, see [here](assets/ext
 | Los Angeles | CA    | 34.0522  | -118.2437 |
 | Pittsburgh  | PA    | 40.4406  | -79.9959  |
 
-## Updating Test Coverage
+## Test Coverage
 
 This project leverages a few tools executed by `coverage.py` to generate the
 below coverage image, namely playwright and the built-in `go tool cover` command.
+
+### Updating Test Coverage
 
 To ensure that you're able to generate the coverage image, you'll need to install
 the `playwright` package and install the `chromium` browser.
@@ -87,3 +89,16 @@ rely on capturing stdout and checking for expected output. The `test/helper.go`
 file contains a helper function that captures stdout and returns the output as a
 string. It can be a buffer but I prefer to use a string because it's easier to
 work with (e.g., `strings.Contains(output, want)`).
+
+### Viewing Coverage
+
+Click the "Coverage Report" button below to view the coverage report. I just did this for fun. Browser automation with playwright is super cool and I quite like the design of [Pico](https://picocss.com/) and
+its ease of use.
+
+<details>
+   <summary>
+      <strong>Report</strong>
+   </summary>
+
+   ![Coverage Report](assets/coverage.png)
+</details>

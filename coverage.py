@@ -17,6 +17,16 @@ class Stream(enum.StrEnum):
     StdOut = "stdout"
 
 
+def chunk_dictionary(d: dict, n: int = 3) -> list:
+    """Chunk a dictionary into n-sized chunks."""
+    chunked: list[dict] = []
+
+    for k, v in d.items():
+        chunked.append({k: v[i : i + n] for i in range(0, len(v), n)})
+
+    return chunked
+
+
 def get_module_name():
     """Get the go module name."""
     with open("go.mod", "r") as f:
@@ -39,11 +49,14 @@ def get_coverage(cov_file: str = ".cov/coverage.txt"):
 
     for line in lines:
         if line.startswith(module_name):
-
             parts = line.replace("\t\t", "\t").split("\t")
             parts = [p for p in parts if bool(p)]
 
             file_path, func_name, cov_pct = parts
+
+            if cov_pct.strip() == "0.0%":
+                continue
+
             filename, line_number, _ = file_path.split(":")
 
             if filename not in coverage:
@@ -66,12 +79,15 @@ def get_coverage(cov_file: str = ".cov/coverage.txt"):
 def render_html(cov: dict):
     """Render the coverage data to an HTML file."""
     j2_env = jinja2.Environment(
-        loader=jinja2.FileSystemLoader("templates"),
+        loader=jinja2.FileSystemLoader("docs/templates"),
         autoescape=True,
     )
 
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     template = j2_env.get_template("coverage.j2")
+
+    cov = chunk_dictionary(cov, n=2)
+
     html = template.render(coverage=cov, timestamp=timestamp)
 
     with open("coverage.html", "w") as f:
