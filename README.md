@@ -11,7 +11,9 @@ APIs, written in Go (v1.22.4)
 
 ---
 
-The demo video is generated using `vhs`. See [demo.tape](assets/demo.tape) or [interactive.tape](assets/interactive.tape) for the exact commands seen above. For the extended video, see [here](assets/extended.mp4).
+The demo video is generated using `vhs`. See [demo.tape](assets/demo.tape) or
+[interactive.tape](assets/interactive.tape) for the exact commands seen above.
+For the extended video, see [here](assets/extended.mp4).
 
 ## Usage
 
@@ -37,7 +39,6 @@ The demo video is generated using `vhs`. See [demo.tape](assets/demo.tape) or [i
 ## Data Sources
 
 1. Geocoding
-
    - ipinfo
    - Nominatim/OpenStreetMap (osm)
 
@@ -77,3 +78,11 @@ Then, install `playwright` with firefox and chromium:
 ```bash
 playwright install
 ```
+
+### More Thoughts
+
+To run the tests, run `make test` from the root directory. Much of the tests
+rely on capturing stdout and checking for expected output. The `test/helper.go`
+file contains a helper function that captures stdout and returns the output as a
+string. It can be a buffer but I prefer to use a string because it's easier to
+work with (e.g., `strings.Contains(output, want)`).

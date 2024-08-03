@@ -44,26 +44,11 @@ const BaseURL string = "https://nominatim.openstreetmap.org"
 // User-Agent for testing purposes.
 const UserAgent string = "geocast-desertthunder@github.com"
 
+// struct Nominatim represents the Nominatim API client.
 type Nominatim struct {
 	baseURL   string
 	params    Params
 	userAgent string
-}
-
-func (n *Nominatim) SetURL(url string) {
-	n.baseURL = url
-}
-
-func (n Nominatim) GetBaseURL() string {
-	return n.baseURL
-}
-
-func (n *Nominatim) SetParams(params Params) {
-	n.params = params
-}
-
-func (n *Nominatim) SetUserAgent(ua string) {
-	n.userAgent = ua
 }
 
 type nominatimSearchResult struct {
@@ -91,6 +76,30 @@ type Params struct {
 	Format      Formats
 	Limit       int
 	NameDetails bool
+}
+
+func (n *Nominatim) SetURL(url string) {
+	n.baseURL = url
+}
+
+func (n Nominatim) BaseURL() string {
+	return n.baseURL
+}
+
+func (n *Nominatim) SetParams(params Params) {
+	n.params = params
+}
+
+func (n *Nominatim) SetUserAgent(ua string) {
+	n.userAgent = ua
+}
+
+func (n *Nominatim) GetParams() Params {
+	return n.params
+}
+
+func (n *Nominatim) UserAgent() string {
+	return n.userAgent
 }
 
 func (p Params) String() string {

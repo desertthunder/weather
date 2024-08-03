@@ -21,24 +21,26 @@ type City struct {
 	Long float64
 }
 
+type ProbabilityOfPrecipitation struct {
+	UnitCode string `json:"unitCode"`
+	Value    int    `json:"value"`
+}
+
 type PeriodAPIResponse struct {
-	Number                     int    `json:"number"`
-	Label                      string `json:"name"`
-	StartTime                  string `json:"startTime"`
-	EndTime                    string `json:"endTime"`
-	IsDaytime                  bool   `json:"isDaytime"`
-	Temperature                int    `json:"temperature"`
-	TemperatureUnit            string `json:"temperatureUnit"`
-	TemperatureTrend           string `json:"temperatureTrend"`
-	ProbabilityOfPrecipitation struct {
-		UnitCode string `json:"unitCode"`
-		Value    int    `json:"value"`
-	} `json:"probabilityOfPrecipitation"`
-	WindSpeed        string `json:"windSpeed"`
-	WindDirection    string `json:"windDirection"`
-	Icon             string `json:"icon"`
-	ShortForecast    string `json:"shortForecast"`
-	DetailedForecast string `json:"detailedForecast"`
+	Number                     int                        `json:"number"`
+	Label                      string                     `json:"name"`
+	StartTime                  string                     `json:"startTime"`
+	EndTime                    string                     `json:"endTime"`
+	IsDaytime                  bool                       `json:"isDaytime"`
+	Temperature                int                        `json:"temperature"`
+	TemperatureUnit            string                     `json:"temperatureUnit"`
+	TemperatureTrend           string                     `json:"temperatureTrend"`
+	ProbabilityOfPrecipitation ProbabilityOfPrecipitation `json:"probabilityOfPrecipitation"`
+	WindSpeed                  string                     `json:"windSpeed"`
+	WindDirection              string                     `json:"windDirection"`
+	Icon                       string                     `json:"icon"`
+	ShortForecast              string                     `json:"shortForecast"`
+	DetailedForecast           string                     `json:"detailedForecast"`
 }
 
 type ElevationAPIResponse struct {
