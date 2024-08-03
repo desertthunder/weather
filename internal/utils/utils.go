@@ -1,5 +1,4 @@
-// Package utils contains utility functions used
-// throughout the project.
+// Package utils contains utility functions used throughout the project.
 package utils
 
 import (
@@ -12,8 +11,8 @@ import (
 	"strings"
 )
 
-// SaveToFile takes a file path of the form
-// out/filename.json and saves the data to the file.
+// SaveToFile takes a file path of the form out/filename.json and saves the data
+// to the file (f is the file path).
 func SaveToFile(f string, d []byte) error {
 	parts := strings.Split(f, "/")
 	filename := parts[0]
@@ -47,11 +46,17 @@ func SaveToFile(f string, d []byte) error {
 	return err
 }
 
+// PrintJSON takes any data and prints it as a JSON string. The purpose of this
+// is to take a struct to pretty print it as JSON for debugging purposes.
 func PrintJSON(data interface{}) {
 	s, _ := json.MarshalIndent(data, "", "  ")
 	fmt.Println(string(s))
 }
 
+// func ValidateIPAddress validates an IP address string.
+//
+// It checks if the IP address string is in the correct format and has four
+// parts (e.g., 192.168.1.1). Each part is checked via validateIPParts.
 func ValidateIPAddress(ipaddr string) bool {
 	parts := strings.Split(ipaddr, ".")
 
@@ -68,12 +73,16 @@ func validateIPParts(parts []string) bool {
 	return true
 }
 
+// PrintRawJSON takes a byte array and prints it as a raw JSON string. The
+// purpose of this is to take a byte array pulled from a response body and
+// pretty print it as JSON for debugging purposes.
 func PrintRawJSON(data []byte) {
 	s := GetRawJSON(data)
 
 	fmt.Println(s)
 }
 
+// GetRawJSON takes a byte array and returns it as a raw JSON string.
 func GetRawJSON(data []byte) string {
 	dst := &bytes.Buffer{}
 

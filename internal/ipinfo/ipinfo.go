@@ -16,9 +16,11 @@ import (
 )
 
 const (
+	// Overridable base URL for the IPInfo API client.
 	baseURL string = "https://ipinfo.io"
 )
 
+// Object representing the response from the IPInfo API.
 type IPInfoResponse struct {
 	IP           string `json:"ip"`
 	Hostname     string `json:"hostname"`
@@ -53,19 +55,27 @@ func (r IPInfoResponse) BuildCity() nws.City {
 	}
 }
 
+// IPInfo Client token setter.
 func (c *IPInfoClient) SetToken(token string) {
 	c.Token = token
 }
 
+// IPInfo Client URL setter.
 func (i *IPInfoClient) SetURL(url string) {
 	i.BaseURL = url
 }
 
-// Setter for the logger.
+// IPInfo Client logger setter.
 func (i *IPInfoClient) SetLogger(logger *log.Logger) {
 	i.Log = logger
 }
 
+// func Point is a computed property that returns the latitude and longitude of
+// the IPInfoResponse response object.
+//
+// It returns the latitude and longitude of the IP address by parsing/converting
+// the string representation of the location to two floats as a
+// tuple (lat, lon).
 func (i *IPInfoResponse) Point() (float64, float64) {
 	coords := strings.Split(i.Location, ",")
 
@@ -75,7 +85,7 @@ func (i *IPInfoResponse) Point() (float64, float64) {
 	return lat, lon
 }
 
-// Call the IPInfo API to geolocate a given IP address.
+// func Geolocate calls the IPInfo API to geolocate a given IP address.
 //
 // If no IP address is provided, no param is passed to the API, which means the
 // client's IP address is used.
@@ -106,7 +116,9 @@ func (c *IPInfoClient) Geolocate(ipaddr *string) (IPInfoResponse, error) {
 
 	if !valid {
 		err := errors.New("invalid IP address")
+
 		fmt.Printf("Invalid IP address: %s\n", *ipaddr)
+
 		return ipinfo, err
 	}
 
@@ -138,6 +150,7 @@ func (c *IPInfoClient) Geolocate(ipaddr *string) (IPInfoResponse, error) {
 	return ipinfo, err
 }
 
+// Validate the response from the IPInfo API for usable data.
 func (r *IPInfoResponse) Validate(data []byte) error {
 	s := utils.GetRawJSON(data)
 
@@ -150,6 +163,7 @@ func (r *IPInfoResponse) Validate(data []byte) error {
 	}
 }
 
+// IPInfo Client constructor.
 func NewIPInfoClient(token string) *IPInfoClient {
 	return &IPInfoClient{Token: token, BaseURL: baseURL}
 }

@@ -15,11 +15,9 @@ import (
 	"github.com/desertthunder/weather/internal/nws"
 )
 
-type City = nws.City
-
-func selectCity() City {
-	var options []huh.Option[City]
-	var selected City
+func selectCity() nws.City {
+	var options []huh.Option[nws.City]
+	var selected nws.City
 
 	for _, city := range nws.Cities() {
 		options = append(options, huh.NewOption(city.Name, city))
@@ -27,7 +25,7 @@ func selectCity() City {
 
 	f := huh.NewForm(
 		huh.NewGroup(
-			huh.NewSelect[City]().
+			huh.NewSelect[nws.City]().
 				Title("Choose a city to fetch the weather for").
 				Options(options...).
 				Value(&selected),
@@ -42,7 +40,7 @@ func selectCity() City {
 	return selected
 }
 
-func getForecastURL(c City) string {
+func getForecastURL(c nws.City) string {
 	uri := c.OfficeURL()
 	r, err := http.Get(uri)
 

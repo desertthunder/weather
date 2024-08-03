@@ -25,16 +25,10 @@ func (c *WeatherClient) BaseURL() string {
 	return c.baseURL
 }
 
-func NewWeatherClient() *WeatherClient {
-	return &WeatherClient{baseURL: baseURL}
-}
-
 func (c *WeatherClient) SetLogger(logger *log.Logger) {
 	c.logger = logger
 	c.Log = logger
 }
-
-type WeatherResponse struct{}
 
 func (c *WeatherClient) GetWeather(city City) (*ForecastAPIResponse, error) {
 	uri := city.OfficeURL()
@@ -100,4 +94,8 @@ func (c *WeatherClient) GetWeather(city City) (*ForecastAPIResponse, error) {
 	}
 
 	return &fc, nil
+}
+
+func NewWeatherClient() *WeatherClient {
+	return &WeatherClient{baseURL: baseURL}
 }

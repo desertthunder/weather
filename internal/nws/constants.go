@@ -3,6 +3,39 @@
 // Contains cities used as constants for the NWS API.
 package nws
 
+import "github.com/charmbracelet/lipgloss"
+
+type styles struct {
+	Day     *lipgloss.Style
+	Night   *lipgloss.Style
+	Today   *lipgloss.Style
+	Tonight *lipgloss.Style
+}
+
+func Styles() *styles {
+	day := lipgloss.NewStyle().
+		Padding(0, 1, 0, 1).
+		Background(lipgloss.Color("35")).
+		Foreground(lipgloss.Color("0"))
+
+	night := lipgloss.NewStyle().
+		Padding(0, 1, 0, 1).
+		Background(lipgloss.Color("37")).
+		Foreground(lipgloss.Color("0"))
+
+	today := lipgloss.NewStyle().
+		Padding(0, 1, 0, 1).
+		Background(lipgloss.Color("86")).
+		Foreground(lipgloss.Color("0"))
+
+	tonight := lipgloss.NewStyle().
+		Padding(0, 1, 0, 1).
+		Background(lipgloss.Color("204")).
+		Foreground(lipgloss.Color("0"))
+
+	return &styles{&day, &night, &today, &tonight}
+}
+
 func Seattle() City {
 	return City{
 		Name: "Seattle",
